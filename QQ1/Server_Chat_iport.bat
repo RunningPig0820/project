@@ -1,0 +1,2 @@
+javac server/Server_Chat_iport.java
+java server.Server_Chat_iport

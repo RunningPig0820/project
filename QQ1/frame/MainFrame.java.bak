@@ -1,0 +1,353 @@
+/*
+	模拟QQ实现通讯,QQ通讯主面板	
+
+	cd java20161\QQ
+	javac frame\MainFrame.java
+	java frame.MainFrame
+*/
+
+package frame;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.ImageIcon;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.AWTException;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.PopupMenu;
+import java.awt.MenuItem;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.HashMap;
+
+import frame.FriendPanel;
+
+import client.Client_Chat_Server;
+
+public class MainFrame extends JFrame{
+	
+	int pointx = 0 , pointy = 0 ;
+	int point = 0; //chatpanel 的 长度
+
+	private JPanel MainPanel = new JPanel();
+	private TitlePanel titlepanel = new TitlePanel();
+	private ChoosePanel choosepanel = new ChoosePanel();
+	private JPanel chatpanel = new JPanel();
+
+	private JScrollPane JScroll = new JScrollPane(chatpanel);
+
+	private JTextField search = new JTextField("搜索 : 联系人，讨论组，群...");
+	
+	private TrayIcon trayIcon; // 托盘图标
+	private SystemTray tray; // 本操作系统托盘的实例
+	private ImageIcon icon = new ImageIcon("E:/java20161/QQ/picture/QQ.png");//将要显示到托盘中的图标
+	private PopupMenu pop = new PopupMenu(); // 构造一个右键弹出式菜单
+	final MenuItem show = new MenuItem("打开程序");
+	final MenuItem exit = new MenuItem("退出程序");
+	
+	public Client_Chat_Server client_chat_server = null ;
+	
+	public MainFrame(int person_iport){
+
+		setLayout(null);
+		chatpanel.setLayout(null);
+		setUndecorated(true);	
+		setSize(300,700);	
+		search.setBorder(null);
+
+		tray = SystemTray.getSystemTray(); // 获得本操作系统托盘的实例
+		icon.setImage(icon.getImage().getScaledInstance(20,20,Image.SCALE_SMOOTH));	
+		trayIcon = new TrayIcon(icon.getImage(),"系统托盘", pop);//实例化托盘图标
+
+		search.setForeground(Color.gray);
+		choosepanel.setBorder(BorderFactory.createLineBorder(Color.gray,1));
+
+		titlepanel.setBounds(0,0,300,120);
+		search.setBounds(0,120,300,30);
+		choosepanel.setBounds(0,148,300,35);
+		JScroll.setBounds(0,185,300,450);
+
+		add(JScroll);
+		add(titlepanel);
+		add(search);
+		pop.add(show);
+		pop.add(exit);
+		add(choosepanel);	
+		
+		client_chat_server = new Client_Chat_Server(person_iport);		
+		
+		System.out.println("***********");
+		System.out.println("  MainFrame  :  " + person_iport);
+		System.out.println("***********");
+
+		try{
+			tray.add(trayIcon); // 将托盘图标添加到系统的托盘实例中
+		} 
+		catch(AWTException ex){
+			ex.printStackTrace();
+		}
+		
+		addMouseListener(new MouseAdapter(){
+			public void mousePressed(MouseEvent e){
+				pointx = e.getX();
+				pointy = e.getY();
+			}
+		});
+		
+		addMouseMotionListener(new MouseAdapter(){
+			public void mouseDragged(MouseEvent e){				
+				setLocation(e.getXOnScreen()-pointx,e.getYOnScreen()-pointy);
+			}
+		});
+
+		search.addFocusListener(new FocusListener(){
+			public void focusGained(FocusEvent e){
+				search.setForeground(Color.black);
+				search.setBackground(Color.white);
+				search.setText("");
+			}
+			public void focusLost(FocusEvent e){
+				search.setForeground(Color.gray);
+				search.setBounds(0,120,300,30);
+				search.setText("搜索 : 联系人，讨论组，群...");
+			} 
+			
+		});
+		
+		//为托盘图标监听点击事件
+		trayIcon.addMouseListener(new MouseAdapter(){
+			public void mouseClicked(MouseEvent e){
+				if(e.getClickCount()== 2){//鼠标双击图标	 
+					//tray.remove(trayIcon); // 从系统的托盘实例中移除托盘图标    
+					setExtendedState(JFrame.NORMAL);//设置状态为正常
+					setVisible(true);//显示主窗体
+				}
+			}
+		});
+
+		//选项注册事件
+		exit.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				//退出程序
+				if(e.getSource()==exit){
+					System.exit(0);//退出程序
+				}
+				//打开程序
+				if(e.getSource()==show){
+					setExtendedState(JFrame.NORMAL);//设置状态为正常
+					setVisible(true);
+				}
+			}
+		});
+		
+		show.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				//退出程序
+				if(e.getSource()==exit){
+					System.exit(0);//退出程序
+				}
+				//打开程序
+				if(e.getSource()==show){
+					setExtendedState(JFrame.NORMAL);//设置状态为正常
+					setVisible(true);
+				}
+			}
+		});
+
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
+	}
+	
+	
+
+	/*
+		添加好友
+	*/
+	public void addChatPanel(FriendPanel friendpanel){					
+		friendpanel.setBounds(0,point,300,50);
+		chatpanel.add(friendpanel);
+		chatpanel.setPreferredSize(new Dimension(280,point));
+		point = point + 53 ;	
+		chatpanel.updateUI();
+		JScroll.updateUI();
+	}
+
+
+	/*
+		QQ通讯个人面板(300，120)	
+	*/	
+	class TitlePanel extends JPanel{
+	
+		private JButton closebutton = new JButton("×");
+		private JButton minimizebutton = new JButton("-");
+		
+		private JLabel MainLabel = new JLabel("QQ");
+		private JLabel photoID = new JLabel();//头像
+		private JLabel nickname = new JLabel("王尼玛");//昵称
+		private JLabel sign = new JLabel("态度决定高度，细节决定成败....");//签名
+		private JLabel kongjian = new JLabel();
+		private JLabel weather = new JLabel();
+		private ImageIcon MainImg = new ImageIcon("E:/java20161/QQ/picture/QQ.png");
+		private ImageIcon HeadImg = new ImageIcon("E:/java20161/QQ/picture/QQ.png");
+		private ImageIcon KongjianImg = new ImageIcon("E:/java20161/QQ/picture/QQ.png");
+		private ImageIcon weatherImg = new ImageIcon("E:/java20161/QQ/picture/sun.jpg");
+		
+		private TitlePanel(){
+			
+			setBounds(0,0,300,120);
+			
+			setLayout(null);
+			
+			MainImg.setImage(MainImg.getImage().getScaledInstance(25,25,Image.SCALE_SMOOTH));	
+			HeadImg.setImage(HeadImg.getImage().getScaledInstance(60,60,Image.SCALE_SMOOTH));	
+			KongjianImg.setImage(KongjianImg.getImage().getScaledInstance(20,20,Image.SCALE_SMOOTH));	
+			weatherImg.setImage(weatherImg.getImage().getScaledInstance(70,70,Image.SCALE_SMOOTH));	
+
+			MainLabel.setIcon(MainImg);
+			photoID.setIcon(HeadImg);
+			kongjian.setIcon(KongjianImg);
+			weather.setIcon(weatherImg);
+			MainLabel.setBounds(5,5,50,20);
+			photoID.setBounds(10,40,60,60);
+			nickname.setBounds(80,40,100,20);
+			sign.setBounds(80,60,100,20);
+			kongjian.setBounds(80,80,20,20);
+			minimizebutton.setBounds(260,0,20,20);
+			weather.setBounds(210,30,70,70);
+			closebutton.setBounds(280,0,20,20);
+			
+			setBackground(new Color(22,154,218));
+			
+			MainLabel.setBorder(null);
+			MainLabel.setForeground(Color.white);
+			MainLabel.setFont(new Font("宋体",Font.PLAIN,18));		
+			nickname.setForeground(Color.white);
+			nickname.setFont(new Font("宋体",Font.PLAIN,18));	
+			sign.setForeground(Color.white);
+			minimizebutton.setBorder(null);
+			minimizebutton.setBackground(new Color(50,160,240));
+			minimizebutton.setMargin(new Insets(0,0,0,0));
+			minimizebutton.setForeground(Color.white);
+			minimizebutton.setFocusPainted(false);
+			minimizebutton.setFont(new Font("宋体",Font.PLAIN,20));
+			closebutton.setBorder(null);
+			closebutton.setBackground(new Color(50,160,240));
+			closebutton.setMargin(new Insets(0,0,0,0));
+			closebutton.setForeground(Color.white);
+			closebutton.setFocusPainted(false);
+			closebutton.setFont(new Font("幼圆",Font.PLAIN,20));
+			
+			add(MainLabel);
+			add(photoID);
+			add(nickname);
+			add(sign);
+			add(kongjian);
+			add(weather);
+			add(minimizebutton);
+			add(closebutton);
+
+			minimizebutton.addMouseListener(new MouseAdapter(){
+				public void mousePressed(MouseEvent e){
+					setExtendedState(JFrame.ICONIFIED);
+				}
+				public void mouseEntered(MouseEvent e){
+					minimizebutton.setBackground(new Color(53,180,250));
+				}
+				public void mouseExited(MouseEvent e){
+					minimizebutton.setBackground(new Color(50,160,240));
+				}
+			});
+			
+			closebutton.addMouseListener(new MouseAdapter(){
+				public void mousePressed(MouseEvent e){
+					dispose();
+				}
+				public void mouseEntered(MouseEvent e){
+					closebutton.setBackground(new Color(214,32,32));
+				}
+				public void mouseExited(MouseEvent e){
+					closebutton.setBackground(new Color(50,160,240));
+				}
+			});	
+			
+		} 
+	}
+
+}
+
+/*
+	
+*/
+class ChoosePanel extends JPanel{
+
+	private JLabel dialogue = new JLabel();//会话
+	private JLabel contacts = new JLabel();//联系人
+	private JLabel space = new JLabel();//空间
+	private JLabel group = new JLabel();//群
+	private JLabel classroom = new JLabel();//课堂
+	private JLabel photo = new JLabel();//手机
+	private ImageIcon dialogueImg = new ImageIcon("E:/java20161/QQ/picture/dialogue.png");
+	private ImageIcon contactsImg = new ImageIcon("E:/java20161/QQ/picture/contacts.png");
+	private ImageIcon spaceImg = new ImageIcon("E:/java20161/QQ/picture/space.png");
+	private ImageIcon groupImg = new ImageIcon("E:/java20161/QQ/picture/group.png");
+	private ImageIcon classroomImg = new ImageIcon("E:/java20161/QQ/picture/classroom.png");
+	private ImageIcon photoImg = new ImageIcon("E:/java20161/QQ/picture/photo.png");
+	private ImageIcon dialogueImg1 = new ImageIcon("E:/java20161/QQ/picture/dialogue1.png");
+	private ImageIcon contactsImg1 = new ImageIcon("E:/java20161/QQ/picture/contacts1.png");
+	private ImageIcon spaceImg1 = new ImageIcon("E:/java20161/QQ/picture/space1.png");
+	private ImageIcon groupImg1 = new ImageIcon("E:/java20161/QQ/picture/group1.png");
+	private ImageIcon classroomImg1 = new ImageIcon("E:/java20161/QQ/picture/classroom1.png");
+	private ImageIcon photoImg1 = new ImageIcon("E:/java20161/QQ/picture/photo1.png");
+
+		
+	public ChoosePanel(){
+		
+		setLayout(new GridLayout(1,0));
+		
+		setICon(dialogueImg,dialogue,dialogueImg1);
+		setICon(contactsImg,contacts,contactsImg1);
+		setICon(spaceImg,space,spaceImg1);
+		setICon(groupImg,group,groupImg1);
+		setICon(classroomImg,classroom,classroomImg1);
+		setICon(photoImg,photo,photoImg1);
+	}
+	
+	public void setICon(ImageIcon Img ,JLabel label ,ImageIcon Img1){
+		Img.setImage(Img.getImage().getScaledInstance(30,30,Image.SCALE_SMOOTH));	
+		label.setIcon(Img);
+		add(label);
+		
+		label.addMouseListener(new MouseAdapter(){
+				public void mousePressed(MouseEvent e){
+					
+				}
+				public void mouseEntered(MouseEvent e){
+					label.setIcon(Img1);
+				}
+				public void mouseExited(MouseEvent e){
+					label.setIcon(Img);
+				}
+			});
+	}
+
+}
+
